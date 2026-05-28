@@ -7,6 +7,10 @@
 #define TAMANIO_TABLERO 10
 #define CANTIDAD_BARCOS 5
 
+const char FORMATO_LECTURA[] = "%[^;];%[^;];%[^;];%[^;]";
+const char LECTURA = 'r';
+const char ESCRITURA = 'w';
+
 const int ERROR_LECTURA = 1;
 const int ERROR_ESCRITURA = 2;
 const int ERROR_ABRIR_ARCHIVO = 3;
@@ -14,16 +18,24 @@ const int ERROR_CANTIDAD_ARGUMENTOS = 4;
 const int EXITO = 0;
 const int INICIALIZACION_INVALIDA = -1;
 const int ERROR_GENERAL = -1;
+const int INICIALIZACION_VALIDA= 0;
 
 const char AGUA = 'A';
 const char TOCADO = 'T';
 const char HUNDIDO = 'H';
 const char BARCO = 'B';
+const char MAPA_INCOGNITO = '*';
 
 const int CANTIDAD_BARCOS_LARGO_2 = 1;
 const int CANTIDAD_BARCOS_LARGO_3 = 2;
 const int CANTIDAD_BARCOS_LARGO_4 = 1;
 const int CANTIDAD_BARCOS_LARGO_5 = 1;
+const int LARGO_BARCO_2 = 2;
+const int LARGO_BARCO_3 = 3;
+const int LARGO_BARCO_4 = 4;
+const int LARGO_BARCO_5 = 5;
+const int LARGO_MINIMO_BARCOS = 2;
+const int LARGO_MAXIMO_BARCOS = 5;
 
 const char NORTE = 'N';
 const char SUR = 'S';
