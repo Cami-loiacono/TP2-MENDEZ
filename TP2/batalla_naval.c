@@ -63,8 +63,8 @@ void inicializar_juego(juego_t *juego)
     {
         for (int j = 0; j < TAMANIO_TABLERO; j++)
         {
-            juego->tablero_propio[i][j] = '*';
-            juego->tablero_enemigo[i][j] = '*';
+            juego->tablero_propio[i][j] = MAPA_INCOGNITO;
+            juego->tablero_enemigo[i][j] = MAPA_INCOGNITO;
         }
     }
     juego->cantidad_barcos_leidos = 0;
