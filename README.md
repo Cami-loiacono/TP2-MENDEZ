@@ -1,2 +1,2 @@
 # TP2-MENDEZ
-TP2 de Fundamentos de la programación, cátedra Mendez. 
+**Página**: https://fundamendez.com.ar/enunciados/tp2/#1-introducci%C3%B3n
