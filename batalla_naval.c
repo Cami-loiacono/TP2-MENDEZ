@@ -19,6 +19,7 @@ const char AGUA = 'A';
 const char TOCADO = 'T';
 const char HUNDIDO = 'H';
 const char BARCO = 'B';
+const char SIMBOLO_VACIO = '*';
 
 const int CANTIDAD_BARCOS_LARGO_2 = 1;
 const int CANTIDAD_BARCOS_LARGO_3 = 2;
@@ -51,8 +52,8 @@ void inicializar_juego(juego_t *juego)
     {
         for (int j = 0; j < TAMANIO_TABLERO; j++)
         {
-            juego->tablero_propio[i][j] = '*';
-            juego->tablero_enemigo[i][j] = '*';
+            juego->tablero_propio[i][j] = SIMBOLO_VACIO;
+            juego->tablero_enemigo[i][j] = SIMBOLO_VACIO;
         }
     }
     juego->cantidad_barcos_leidos = 0;
@@ -336,8 +337,8 @@ int cargar_barcos_propios(const char *archivo_barcos, juego_t *juego)
             return ERROR_LECTURA;
         }
 
-        asignar_barco(juego, largo_barco, posiciones);                            
-        dibujar_posiciones_barco(juego, posiciones, largo_barco, matriz_ocupacion); 
+        asignar_barco(juego, largo_barco, posiciones);
+        dibujar_posiciones_barco(juego, posiciones, largo_barco, matriz_ocupacion);
         juego->cantidad_barcos_leidos++;
     }
 
@@ -351,57 +352,80 @@ int cargar_barcos_propios(const char *archivo_barcos, juego_t *juego)
 }
 
 /*-----------------------------------------------------------------*/
-/*revisar de aca hasta abajo*/
-void registrar_disparo_enemigo(juego_t *juego, coordenada_t disp)
+bool barco_fue_tocado(barco_t barco_actual, coordenada_t disparo)
 {
-    if (juego->tablero_propio[disp.fila][disp.columna] == 'B')
+    for (int i = 0; i < barco_actual.largo; i++)
     {
-        juego->tablero_propio[disp.fila][disp.columna] = 'T';
+        if ((barco_actual.posiciones[i].fila == disparo.fila) && (barco_actual.posiciones[i].columna == disparo.columna))
+        {
+            return true;
+        }
+    }
+    return false;
+}
+bool enemigo_hunde_barco(char tablero_propio[TAMANIO_TABLERO][TAMANIO_TABLERO], barco_t *barco)
+{
+    for (int i = 0; i < barco->largo; i++)
+    {
+        if (tablero_propio[barco->posiciones[i].fila][barco->posiciones[i].columna] != TOCADO)
+        {
+            return false;
+        }
+    }
+    return true;
+}
+void modificar_tablero_propio_hundido(char tablero_propio[TAMANIO_TABLERO][TAMANIO_TABLERO], barco_t *barco)
+{
+    for (int i = 0; i < barco->largo; i++)
+    {
+        tablero_propio[barco->posiciones[i].fila][barco->posiciones[i].columna] = HUNDIDO;
+    }
+}
+void consecuencia_barco_hundido(int *barcos_aliados_sobrevivientes, int *balas_enemigas_acertadas)
+{
+    printf("¡El enemigo ha hundido uno de tus barcos! Te quedan %d barcos aliados sobrevivientes.\n", *barcos_aliados_sobrevivientes);
+    (*barcos_aliados_sobrevivientes)--;
+    (*balas_enemigas_acertadas)++;
+}
+void consecuencia_barco_tocado()
+{
+    printf("¡El enemigo ha tocado uno de tus barcos!\n");
+}
+void modificar_tablero_propio_tocado(char tablero_propio[TAMANIO_TABLERO][TAMANIO_TABLERO], barco_t *barco)
+{
+    for (int i = 0; i < barco->largo; i++)
+    {
+        tablero_propio[barco->posiciones[i].fila][barco->posiciones[i].columna] = TOCADO;
+    }
+}
+void verificar_disparo_enemigo(juego_t *juego, coordenada_t disparo)
+{
+    if (juego->tablero_propio[disparo.fila][disparo.columna] == BARCO)
+    {
+        juego->tablero_propio[disparo.fila][disparo.columna] = TOCADO;
         juego->balas_enemigas_acertadas++;
 
         for (int i = 0; i < CANTIDAD_BARCOS; i++)
         {
-            barco_t *b = &(juego->barcos_jugador[i]);
-            bool pertenece = false;
-            for (int j = 0; j < b->largo; j++)
+            barco_t *barco_actual = &(juego->barcos_jugador[i]);
+            if (barco_fue_tocado(*barco_actual, disparo))
             {
-                if (b->posiciones[j].fila == disp.fila && b->posiciones[j].columna == disp.columna)
+                if (enemigo_hunde_barco(juego->tablero_propio, barco_actual))
                 {
-                    pertenece = true;
-                    break;
-                }
-            }
-            if (pertenece)
-            {
-                bool hundido = true;
-                for (int j = 0; j < b->largo; j++)
-                {
-                    if (juego->tablero_propio[b->posiciones[j].fila][b->posiciones[j].columna] != 'T')
-                    {
-                        hundido = false;
-                        break;
-                    }
-                }
-                if (hundido)
-                {
-                    juego->barcos_aliados_sobrevivientes--;
-                    for (int j = 0; j < b->largo; j++)
-                    {
-                        juego->tablero_propio[b->posiciones[j].fila][b->posiciones[j].columna] = 'H';
-                    }
-                    printf("¡El enemigo ha hundido uno de tus barcos!\n");
+                    modificar_tablero_propio_hundido(juego->tablero_propio, barco_actual);
+                    consecuencia_barco_hundido(juego->barcos_aliados_sobrevivientes, juego->balas_enemigas_acertadas);
                 }
                 else
                 {
-                    printf("¡El enemigo te ha alcanzado!\n");
+                    modificar_tablero_propio_tocado(juego->tablero_propio, barco_actual);
+                    consecuencia_barco_tocado();
                 }
-                break;
             }
         }
     }
-    else if (juego->tablero_propio[disp.fila][disp.columna] == '-')
+    else if (juego->tablero_propio[disparo.fila][disparo.columna] == SIMBOLO_VACIO)
     {
-        juego->tablero_propio[disp.fila][disp.columna] = 'A';
+        juego->tablero_propio[disparo.fila][disparo.columna] = AGUA;
         juego->balas_enemigas_erradas++;
         printf("¡El enemigo disparó al agua!\n");
     }
@@ -411,9 +435,9 @@ void registrar_disparo_enemigo(juego_t *juego, coordenada_t disp)
     }
 }
 
-int guardar_reporte(const char *path, juego_t *juego)
+int guardar_reporte(const char *archivo_reporte, juego_t *juego)
 {
-    FILE *f = fopen(path, "w");
+    FILE *f = fopen(archivo_reporte, "w");
     if (!f)
         return ERROR_ESCRITURA;
     bool error = false;
@@ -440,64 +464,85 @@ int verificar_cant_argumentos(int argc)
 {
     if (argc != 3)
     {
-        printf("Error de cantidad de argumentos. Uso: <programa_ejecutable> <archivo_barcos> <archivo_reporte>\n");
+        printf("Error de cantidad de argumentos. Se DEBE ingresar: <programa_ejecutable> <archivo_barcos> <archivo_reporte>\n");
         return ERROR_CANTIDAD_ARGUMENTOS;
     }
     return EXITO;
 }
 
+bool disparo_valido(int fila, int columna)
+{
+    return (fila < 1 || fila > TAMANIO_TABLERO || columna < 1 || columna > TAMANIO_TABLERO);
+}
+void reestablecer_disparo(int *fila, int *columna)
+{
+    *fila = 0;
+    *columna = 0;
+}
+void obtener_disparo_usuario(int *fila, int *columna)
+{
+    printf("Ingrese su disparo (FILA;COLUMNA): ");
+    scanf("%d;%d", fila, columna);
+}
+void consecuencia_resultado_disparo_jugador(char tablero_enemigo[TAMANIO_TABLERO][TAMANIO_TABLERO], int *balas_acertadas, int *balas_erradas, int *barcos_hundidos, char resultado, coordenada_t disparo)
+{
+    printf("Resultado de tu disparo: ");
+    if (resultado == AGUA)
+    {
+        printf("¡Tu disparo al agua! No has acertado ningún barco enemigo.\n");
+        (*balas_erradas)++;
+        tablero_enemigo[disparo.fila][disparo.columna] = AGUA;
+    }
+    else if (resultado == TOCADO)
+    {
+        printf("¡Has tocado un barco enemigo en la posición %d;%d!\n", disparo.fila + 1, disparo.columna + 1);
+        (*balas_acertadas)++;
+        tablero_enemigo[disparo.fila][disparo.columna] = TOCADO;
+    }
+    else if (resultado == HUNDIDO)
+    {
+        printf("¡Has hundido un barco enemigo en la posición %d;%d!\n", disparo.fila + 1, disparo.columna + 1);
+        (*balas_acertadas)++;
+        (*barcos_hundidos)++;
+        tablero_enemigo[disparo.fila][disparo.columna] = HUNDIDO;
+    }
+}
 void empezar_batalla(oponente_t *oponente, juego_t *juego, char *argv[])
 {
+    int fila_ingresada = 0;
+    int columna_ingresada = 0;
     printf("Empieza la batalla!\n");
     while (juego->barcos_aliados_sobrevivientes > 0 && juego->barcos_enemigos_hundidos < CANT_BARCOS)
     {
         mostrar_interfaz(juego);
-        int fila_ingresada = 0, columna_ingresada = 0;
-        printf("Ingrese su disparo (FILA;COLUMNA): ");
-        scanf("%d;%d", &fila_ingresada, &columna_ingresada);
 
-        if (fila_ingresada < 1 || fila_ingresada > TAMANIO_TABLERO || columna_ingresada < 1 || columna_ingresada > TAMANIO_TABLERO)
+        reestablecer_disparo(&fila_ingresada, &columna_ingresada);
+        obtener_disparo_usuario(&fila_ingresada, &columna_ingresada);
+
+        if (disparo_valido(fila_ingresada, columna_ingresada))
         {
-            printf("Coordenadas fuera del mapa (1 a 10). Intente de nuevo.\n");
-            continue;
+            coordenada_t disp_jugador;
+            disp_jugador.fila = fila_ingresada - 1;
+            disp_jugador.columna = columna_ingresada - 1;
+
+            char resultado_jugador = oponente_recibe_disparo(oponente, disp_jugador);
+            consecuencia_resultado_disparo_jugador(juego->tablero_enemigo, juego->balas_aliadas_acertadas, juego->balas_aliadas_erradas, juego->barcos_enemigos_hundidos, resultado_jugador, disp_jugador);
+            if (juego->barcos_enemigos_hundidos == CANT_BARCOS)
+            {
+                printf("¡Has hundido toda la flota enemiga! ¡Felicidades, has ganado la batalla!\n");
+            }
+            else
+            {
+                printf("¡Tu turno ha terminado! Ahora es el turno del oponente.\n");
+                coordenada_t disp_enemigo = oponente_realiza_disparo(oponente);
+                printf("El oponente dispara en la posición: %d;%d\n", disp_enemigo.fila + 1, disp_enemigo.columna + 1);
+                verificar_disparo_enemigo(juego, disp_enemigo);
+            }
         }
-
-        coordenada_t disp_jugador;
-        disp_jugador.fila = fila_ingresada - 1;
-        disp_jugador.columna = columna_ingresada - 1;
-
-        char resultado_jugador = oponente_recibe_disparo(oponente, disp_jugador);
-        printf("Resultado de tu disparo: ");
-        if (resultado_jugador == AGUA)
+        else
         {
-            printf("Agua\n");
-            juego->tablero_enemigo[disp_jugador.fila][disp_jugador.columna] = 'A';
-            juego->balas_aliadas_erradas++;
+            printf("Coordenadas inválidas o ya disparadas. Intente de nuevo.\n");
         }
-        else if (resultado_jugador == TOCADO)
-        {
-            printf("Tocado\n");
-            juego->tablero_enemigo[disp_jugador.fila][disp_jugador.columna] = 'T';
-            juego->balas_aliadas_acertadas++;
-        }
-        else if (resultado_jugador == 'H')
-        {
-            printf("Hundido\n");
-            juego->tablero_enemigo[disp_jugador.fila][disp_jugador.columna] = 'H';
-            juego->balas_aliadas_acertadas++;
-            juego->barcos_enemigos_hundidos++;
-        }
-
-        if (juego->barcos_enemigos_hundidos == CANT_BARCOS)
-        {
-            break;
-        }
-
-        // --- TURNO OPONENTE ---
-        coordenada_t disp_enemigo = oponente_realiza_disparo(oponente);
-        printf("El oponente dispara en la posición: %d;%d\n", disp_enemigo.fila + 1, disp_enemigo.columna + 1);
-
-        registrar_disparo_enemigo(juego, disp_enemigo);
     }
 }
 void mostrar_mensaje_final(juego_t juego)
