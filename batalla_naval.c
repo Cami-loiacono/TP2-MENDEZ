@@ -13,6 +13,7 @@ const int ERROR_ABRIR_ARCHIVO = 3;
 const int ERROR_CANTIDAD_ARGUMENTOS = 4;
 const int EXITO = 0;
 const int INICIALIZACION_INVALIDA = -1;
+const int INICIALIZACION_VALIDA = 0;
 const int ERROR_GENERAL = -1;
 
 const char AGUA = 'A';
@@ -20,6 +21,12 @@ const char TOCADO = 'T';
 const char HUNDIDO = 'H';
 const char BARCO = 'B';
 const char SIMBOLO_VACIO = '*';
+
+const char LECTURA = 'r';
+const char ESCRITURA = 'w'; 
+const char FORMATO_LECTURA[] = "%[^;];%[^;];%[^;];%[^;]\n";
+const int ARGUMENTO_REPORTE = 2;
+const int ARGUMENTO_BARCOS = 1;
 
 const int CANTIDAD_BARCOS_LARGO_2 = 1;
 const int CANTIDAD_BARCOS_LARGO_3 = 2;
@@ -56,12 +63,12 @@ void inicializar_juego(juego_t *juego)
             juego->tablero_enemigo[i][j] = SIMBOLO_VACIO;
         }
     }
-    juego->cantidad_barcos_leidos = 0;
-    juego->balas_aliadas_acertadas = 0;
-    juego->balas_aliadas_erradas = 0;
-    juego->balas_enemigas_acertadas = 0;
-    juego->balas_enemigas_erradas = 0;
-    juego->barcos_enemigos_hundidos = 0;
+    juego->cantidad_barcos_leidos = INICIALIZACION_VALIDA;
+    juego->balas_aliadas_acertadas = INICIALIZACION_VALIDA;
+    juego->balas_aliadas_erradas = INICIALIZACION_VALIDA;
+    juego->balas_enemigas_acertadas = INICIALIZACION_VALIDA;
+    juego->balas_enemigas_erradas = INICIALIZACION_VALIDA;
+    juego->barcos_enemigos_hundidos = INICIALIZACION_VALIDA;
     juego->barcos_aliados_sobrevivientes = CANTIDAD_BARCOS;
 }
 
@@ -292,7 +299,7 @@ void inicializar_tablero_ocupacion(bool matriz_ocupacion[TAMANIO_TABLERO][TAMANI
 
 int cargar_barcos_propios(const char *archivo_barcos, juego_t *juego)
 {
-    FILE *barcos_jugador = fopen(archivo_barcos, "r");
+    FILE *barcos_jugador = fopen(archivo_barcos, LECTURA);
     if (!barcos_jugador)
     {
         printf("¡Error de abrir el archivo de barcos!\n");
@@ -302,14 +309,14 @@ int cargar_barcos_propios(const char *archivo_barcos, juego_t *juego)
     int columna_inicializacion = INICIALIZACION_INVALIDA;
     int largo_barco = INICIALIZACION_INVALIDA;
     char direccion = '\0';
-    int cantidad_largo_2 = 0;
-    int cantidad_largo_3 = 0;
-    int cantidad_largo_4 = 0;
-    int cantidad_largo_5 = 0;
+    int cantidad_largo_2 = INICIALIZACION_INVALIDA;
+    int cantidad_largo_3 = INICIALIZACION_INVALIDA;
+    int cantidad_largo_4 = INICIALIZACION_INVALIDA;
+    int cantidad_largo_5 = INICIALIZACION_INVALIDA;
     bool matriz_ocupacion[TAMANIO_TABLERO][TAMANIO_TABLERO];
     inicializar_tablero_ocupacion(matriz_ocupacion);
 
-    while ((fscanf(barcos_jugador, "%d;%d;%c;%d", &fila_inicializacion, &columna_inicializacion, &direccion, &largo_barco)) != EOF)
+    while ((fscanf(barcos_jugador, FORMATO_LECTURA, fila_inicializacion, columna_inicializacion, direccion, largo_barco)) != EOF)
     {
         if (validar_datos_barco(fila_inicializacion, columna_inicializacion, direccion, largo_barco, juego->cantidad_barcos_leidos, barcos_jugador, cantidad_largo_2, cantidad_largo_3, cantidad_largo_4, cantidad_largo_5) != EXITO)
         {
@@ -435,26 +442,24 @@ void verificar_disparo_enemigo(juego_t *juego, coordenada_t disparo)
     }
 }
 
-int guardar_reporte(const char *archivo_reporte, juego_t *juego)
+int escribir_reporte(const char *archivo_reporte, juego_t *juego)
 {
-    FILE *f = fopen(archivo_reporte, "w");
-    if (!f)
-        return ERROR_ESCRITURA;
+    FILE *reporte_archivo = fopen(archivo_reporte, ESCRITURA);
     bool error = false;
-    if (fprintf(f, "Balas aliadas acertadas: %d\n", juego->balas_aliadas_acertadas) < 0 ||
-        fprintf(f, "Balas aliadas erradas: %d\n", juego->balas_aliadas_erradas) < 0 ||
-        fprintf(f, "Balas enemigas acertadas: %d\n", juego->balas_enemigas_acertadas) < 0 ||
-        fprintf(f, "Balas enemigas erradas: %d\n", juego->balas_enemigas_erradas) < 0 ||
-        fprintf(f, "Barcos enemigos hundidos: %d\n", juego->barcos_enemigos_hundidos) < 0 ||
-        fprintf(f, "Barcos aliados sobrevivientes: %d\n", juego->barcos_aliados_sobrevivientes) < 0)
+    if (!reporte_archivo)
     {
-        error = true;
+        return ERROR_ESCRITURA;
     }
-    if (fclose(f) != 0)
+    if (fprintf(reporte_archivo, "Balas aliadas acertadas: %d\n", juego->balas_aliadas_acertadas) < 0 ||
+        fprintf(reporte_archivo, "Balas aliadas erradas: %d\n", juego->balas_aliadas_erradas) < 0 ||
+        fprintf(reporte_archivo, "Balas enemigas acertadas: %d\n", juego->balas_enemigas_acertadas) < 0 ||
+        fprintf(reporte_archivo, "Balas enemigas erradas: %d\n", juego->balas_enemigas_erradas) < 0 ||
+        fprintf(reporte_archivo, "Barcos enemigos hundidos: %d\n", juego->barcos_enemigos_hundidos) < 0 ||
+        fprintf(reporte_archivo, "Barcos aliados sobrevivientes: %d\n", juego->barcos_aliados_sobrevivientes) < 0)
     {
-        error = true;
+        return ERROR_ESCRITURA;
     }
-    if (error)
+    if (fclose(reporte_archivo) != 0)
     {
         return ERROR_ESCRITURA;
     }
@@ -507,7 +512,7 @@ void consecuencia_resultado_disparo_jugador(char tablero_enemigo[TAMANIO_TABLERO
         tablero_enemigo[disparo.fila][disparo.columna] = HUNDIDO;
     }
 }
-void empezar_batalla(oponente_t *oponente, juego_t *juego, char *argv[])
+void empezar_turnos_batalla(oponente_t *oponente, juego_t *juego)
 {
     int fila_ingresada = 0;
     int columna_ingresada = 0;
@@ -515,7 +520,6 @@ void empezar_batalla(oponente_t *oponente, juego_t *juego, char *argv[])
     while (juego->barcos_aliados_sobrevivientes > 0 && juego->barcos_enemigos_hundidos < CANT_BARCOS)
     {
         mostrar_interfaz(juego);
-
         reestablecer_disparo(&fila_ingresada, &columna_ingresada);
         obtener_disparo_usuario(&fila_ingresada, &columna_ingresada);
 
@@ -579,7 +583,7 @@ int main(int argc, char *argv[])
 
     juego_t juego;
     inicializar_juego(&juego);
-    estado_carga = cargar_barcos_propios(argv[1], &juego);
+    estado_carga = cargar_barcos_propios(argv[ARGUMENTO_BARCOS], &juego);
 
     if (estado_carga != EXITO)
     {
@@ -594,12 +598,10 @@ int main(int argc, char *argv[])
         liberar_barcos_memoria(&juego);
         return ERROR_LECTURA;
     }
-    empezar_batalla(oponente, &juego, argv);
-
-    mostrar_interfaz(&juego);
+    empezar_turnos_batalla(oponente, &juego);
     mostrar_mensaje_final(juego);
 
-    int estado_reporte = guardar_reporte(argv[2], &juego);
+    int estado_reporte = escribir_reporte(argv[ARGUMENTO_REPORTE], &juego);
     oponente_destruir(oponente);
     liberar_barcos_memoria(&juego);
 
