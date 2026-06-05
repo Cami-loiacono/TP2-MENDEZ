@@ -7,37 +7,43 @@
 #define TAMANIO_TABLERO 10
 #define CANTIDAD_BARCOS 5
 
+const char FORMATO_LECTURA[] = "%[^;];%[^;];%[^;];%[^;]";
+const char LECTURA = 'r';
+const char ESCRITURA = 'w';
+const int ARGUMENTO_BARCOS = 1;
+const int ARGUMENTO_REPORTE = 2;
+
 const int ERROR_LECTURA = 1;
 const int ERROR_ESCRITURA = 2;
 const int ERROR_ABRIR_ARCHIVO = 3;
 const int ERROR_CANTIDAD_ARGUMENTOS = 4;
 const int EXITO = 0;
 const int INICIALIZACION_INVALIDA = -1;
-const int INICIALIZACION_VALIDA = 0;
 const int ERROR_GENERAL = -1;
+const int INICIALIZACION_VALIDA= 0;
 
 const char AGUA = 'A';
 const char TOCADO = 'T';
 const char HUNDIDO = 'H';
 const char BARCO = 'B';
-const char SIMBOLO_VACIO = '*';
-
-const char LECTURA = 'r';
-const char ESCRITURA = 'w'; 
-const char FORMATO_LECTURA[] = "%[^;];%[^;];%[^;];%[^;]\n";
-const int ARGUMENTO_REPORTE = 2;
-const int ARGUMENTO_BARCOS = 1;
+const char MAPA_INCOGNITO = '*';
 
 const int CANTIDAD_BARCOS_LARGO_2 = 1;
 const int CANTIDAD_BARCOS_LARGO_3 = 2;
 const int CANTIDAD_BARCOS_LARGO_4 = 1;
 const int CANTIDAD_BARCOS_LARGO_5 = 1;
+const int LARGO_BARCO_2 = 2;
+const int LARGO_BARCO_3 = 3;
+const int LARGO_BARCO_4 = 4;
+const int LARGO_BARCO_5 = 5;
+const int LARGO_MINIMO_BARCOS = 2;
+const int LARGO_MAXIMO_BARCOS = 5;
 
 const char NORTE = 'N';
 const char SUR = 'S';
 const char ESTE = 'E';
-const char OESTE = 'O';
 
+const char OESTE = 'O';
 typedef struct juego
 {
     char tablero_propio[TAMANIO_TABLERO][TAMANIO_TABLERO];
@@ -59,8 +65,8 @@ void inicializar_juego(juego_t *juego)
     {
         for (int j = 0; j < TAMANIO_TABLERO; j++)
         {
-            juego->tablero_propio[i][j] = SIMBOLO_VACIO;
-            juego->tablero_enemigo[i][j] = SIMBOLO_VACIO;
+            juego->tablero_propio[i][j] = MAPA_INCOGNITO;
+            juego->tablero_enemigo[i][j] = MAPA_INCOGNITO;
         }
     }
     juego->cantidad_barcos_leidos = INICIALIZACION_VALIDA;
@@ -450,12 +456,12 @@ int escribir_reporte(const char *archivo_reporte, juego_t *juego)
     {
         return ERROR_ESCRITURA;
     }
-    if (fprintf(reporte_archivo, "Balas aliadas acertadas: %d\n", juego->balas_aliadas_acertadas) < 0 ||
-        fprintf(reporte_archivo, "Balas aliadas erradas: %d\n", juego->balas_aliadas_erradas) < 0 ||
-        fprintf(reporte_archivo, "Balas enemigas acertadas: %d\n", juego->balas_enemigas_acertadas) < 0 ||
-        fprintf(reporte_archivo, "Balas enemigas erradas: %d\n", juego->balas_enemigas_erradas) < 0 ||
-        fprintf(reporte_archivo, "Barcos enemigos hundidos: %d\n", juego->barcos_enemigos_hundidos) < 0 ||
-        fprintf(reporte_archivo, "Barcos aliados sobrevivientes: %d\n", juego->barcos_aliados_sobrevivientes) < 0)
+    if (fprintf(reporte_archivo, "Balas aliadas acertadas: %d\n", juego->balas_aliadas_acertadas) < INICIALIZACION_VALIDA ||
+        fprintf(reporte_archivo, "Balas aliadas erradas: %d\n", juego->balas_aliadas_erradas) < INICIALIZACION_VALIDA ||
+        fprintf(reporte_archivo, "Balas enemigas acertadas: %d\n", juego->balas_enemigas_acertadas) < INICIALIZACION_VALIDA ||
+        fprintf(reporte_archivo, "Balas enemigas erradas: %d\n", juego->balas_enemigas_erradas) < INICIALIZACION_VALIDA ||
+        fprintf(reporte_archivo, "Barcos enemigos hundidos: %d\n", juego->barcos_enemigos_hundidos) < INICIALIZACION_VALIDA ||
+        fprintf(reporte_archivo, "Barcos aliados sobrevivientes: %d\n", juego->barcos_aliados_sobrevivientes) < INICIALIZACION_VALIDA)
     {
         return ERROR_ESCRITURA;
     }
