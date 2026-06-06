@@ -450,7 +450,6 @@ void verificar_disparo_enemigo(juego_t *juego, coordenada_t disparo)
 {
     if (juego->tablero_propio[disparo.fila][disparo.columna] == BARCO)
     {
-        // Se impacta únicamente la celda elegida poniéndose en estado TOCADO
         juego->tablero_propio[disparo.fila][disparo.columna] = TOCADO;
         juego->balas_enemigas_acertadas++;
 
@@ -600,13 +599,12 @@ void empezar_turnos_batalla(oponente_t *oponente, juego_t *juego)
         
         if (juego->barcos_enemigos_hundidos == CANTIDAD_BARCOS)
         {
-            printf("¡Has hundido toda la flota enemiga! ¡Felicidades, has ganado la batalla!\n");
+            printf("¡Felicidades, GANASTE la batalla!\n");
         }
         else
         {
-            printf("¡Tu turno ha terminado! Ahora es el turno del oponente.\n");
             coordenada_t disp_enemigo = oponente_realiza_disparo(oponente);
-            printf("El oponente dispara en la posición: %d;%d\n", disp_enemigo.fila + 1, disp_enemigo.columna + 1);
+            printf("El oponente dispara: %d;%d\n", disp_enemigo.fila + 1, disp_enemigo.columna + 1);
             verificar_disparo_enemigo(juego, disp_enemigo);
         }
     }
