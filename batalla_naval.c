@@ -26,7 +26,7 @@ const char AGUA = 'A';
 const char TOCADO = 'T';
 const char HUNDIDO = 'H';
 const char BARCO = 'B';
-const char MAPA_INCOGNITO = '*';
+const char MAPA_INCOGNITO = ' ';
 
 const int CANTIDAD_BARCOS_LARGO_2 = 1;
 const int CANTIDAD_BARCOS_LARGO_3 = 2;
@@ -578,7 +578,7 @@ void empezar_turnos_batalla(oponente_t *oponente, juego_t *juego)
         reestablecer_disparo(&fila_ingresada, &columna_ingresada);
         obtener_disparo_usuario(&fila_ingresada, &columna_ingresada);
 
-        if (!disparo_valido(fila_ingresada, columna_ingresada)) 
+        if (disparo_valido(fila_ingresada, columna_ingresada)) 
         {
             coordenada_t disp_jugador;
             disp_jugador.fila = fila_ingresada - 1;
