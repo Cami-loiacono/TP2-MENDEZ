@@ -61,6 +61,10 @@ typedef struct juego
     int barcos_aliados_sobrevivientes;
 } juego_t;
 
+/*
+PRE: -
+POS: Inicializa el juego, dejando los tableros con el mapa de incógnito, los barcos sin posiciones asignadas y las variables de conteo en 0 o cantidad inicial.
+*/
 void inicializar_juego(juego_t *juego)
 {
     for (int i = INICIALIZACION_VALIDA; i < TAMANIO_TABLERO; i++)
@@ -85,6 +89,10 @@ void inicializar_juego(juego_t *juego)
     juego->barcos_aliados_sobrevivientes = CANTIDAD_BARCOS;
 }
 
+/*
+PRE: juego debe haber sido inicializado previamente.
+POS: liber
+*/
 void liberar_barcos_memoria(juego_t *juego)
 {
     for (int i = INICIALIZACION_VALIDA; i < juego->cantidad_barcos_leidos; i++)
@@ -187,7 +195,7 @@ int validar_datos_barco(int fila, int columna, char direccion, int largo, int ca
         printf("¡Error de lectura! Se han leído más barcos de los permitidos.\n");
         return ERROR_LECTURA;
     }
-    if (fila < 1 || fila > TAMANIO_TABLERO || columna < 1 || columna > TAMANIO_TABLERO)
+    if (fila < COORDENADA_MINIMA|| fila > TAMANIO_TABLERO || columna < COORDENADA_MINIMA || columna > TAMANIO_TABLERO)
     {
         printf("¡Error de lectura! Posición inicial fuera del mapa: %d;%d\n", fila, columna);
         return ERROR_LECTURA;
