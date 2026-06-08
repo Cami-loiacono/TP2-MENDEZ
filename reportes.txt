@@ -1,0 +1,6 @@
+Balas aliadas acertadas: 11
+Balas aliadas erradas: 21
+Balas enemigas acertadas: 17
+Balas enemigas erradas: 15
+Barcos enemigos hundidos: 3
+Barcos aliados sobrevivientes: 0
