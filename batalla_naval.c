@@ -442,7 +442,7 @@ int verificar_cant_argumentos(int argc)
 
 bool disparo_valido(int fila, int columna, char tablero_enemigo[TAMANIO_TABLERO][TAMANIO_TABLERO])
 {
-    if (fila < 1 || fila > TAMANIO_TABLERO || columna < 1 || columna > TAMANIO_TABLERO)
+    if (fila < COORDENADA_MINIMA || fila > TAMANIO_TABLERO || columna < COORDENADA_MINIMA || columna > TAMANIO_TABLERO)
     {
         return false;
     }
