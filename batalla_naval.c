@@ -211,34 +211,35 @@ int validacion_largo_barco_cantidad(int largo_barco, FILE *barcos, int *cantidad
 
 int validar_datos_barco(int fila, int columna, char direccion, int largo, int cant_barcos, FILE *barcos_jugador, int *cant_largo_2, int *cant_largo_3, int *cant_largo_4, int *cant_largo_5)
 {
+    //cantidad de barcos no puede ser mayor a la permitida
     if (cant_barcos >= CANTIDAD_BARCOS)
     {
         fclose(barcos_jugador);
         printf("¡Error de lectura! Se han leído más barcos de los permitidos.\n");
         return ERROR_LECTURA;
     }
-
+    //dentro del tablero
     if (fila < 1 || fila > TAMANIO_TABLERO || columna < 1 || columna > TAMANIO_TABLERO)
     {
         fclose(barcos_jugador);
         printf("¡Error de lectura! Posición inicial fuera del mapa: %d;%d\n", fila, columna);
         return ERROR_LECTURA;
     }
-
+    //dirección válida
     if (validar_direccion(direccion) != EXITO)
     {
         fclose(barcos_jugador);
         printf("¡Error de lectura! Dirección inválida: %c. \n Solo puede ser: -S-, -N-, -E-, -O-\n", direccion);
         return ERROR_LECTURA;
     }
-
+    //largo válido del barco
     if (!validar_largo_barco(largo))
     {
         fclose(barcos_jugador);
         printf("¡Error de lectura! Largo de barco inválido: %d\n", largo);
         return ERROR_LECTURA;
     }
-
+    //cantidad de barcos por largo no puede ser mayor a la permitida
     if (validacion_largo_barco_cantidad(largo, barcos_jugador, cant_largo_2, cant_largo_3, cant_largo_4, cant_largo_5) != EXITO)
     {
         return ERROR_LECTURA;
@@ -318,14 +319,8 @@ void inicializar_tablero_ocupacion(bool matriz_ocupacion[TAMANIO_TABLERO][TAMANI
     }
 }
 
-int cargar_barcos_propios(const char *archivo_barcos, juego_t *juego)
+int cargar_barcos_propios(FILE *barcos_jugador, juego_t *juego)
 {
-    FILE *barcos_jugador = fopen(archivo_barcos, LECTURA);
-    if (!barcos_jugador)
-    {
-        printf("¡Error de abrir el archivo de barcos!\n");
-        return ERROR_ABRIR_ARCHIVO;
-    }
     int fila_inicializacion = INICIALIZACION_INVALIDA;
     int columna_inicializacion = INICIALIZACION_INVALIDA;
     int largo_barco = INICIALIZACION_INVALIDA;
@@ -382,17 +377,7 @@ int cargar_barcos_propios(const char *archivo_barcos, juego_t *juego)
             }
         }
     }
-
-    if (!hubo_error)
-    {
-        fclose(barcos_jugador);
-        int validacion = validar_cantidad_barcos_cargados(juego->cantidad_barcos_leidos);
-        if (validacion != EXITO || !validar_composicion_barcos(juego))
-        {
-            printf("¡Error! La composición final de la flota no es la reglamentaria.\n");
-            codigo_retorno = ERROR_LECTURA;
-        }
-    }
+    fclose(barcos_jugador);
 
     return codigo_retorno;
 }
@@ -411,7 +396,10 @@ bool barco_fue_tocado(barco_t barco_actual, coordenada_t disparo)
     return tocado;
 }
 
-// Verifica si todas las posiciones del barco ya han recibido impactos (carácter 'T')
+/*
+PRE: el juego debe estar inicializado y el disparo debe ser una coordenada válida dentro del tablero.
+POS: se verifica si el disparo enemigo ha hundido un barco aliado. Para esto, se verifica si todos los segmentos del barco han sido tocados. Si el largo completo del barco es todo "Tocado" ('T'), quiere deci que el barco ha sido hundido y se devuelve true. Si al menos un segmento del barco no ha sido tocado, se devuelve false.
+*/
 bool enemigo_hunde_barco(char tablero_propio[TAMANIO_TABLERO][TAMANIO_TABLERO], barco_t *barco)
 {
     bool hundido = true;
@@ -425,7 +413,6 @@ bool enemigo_hunde_barco(char tablero_propio[TAMANIO_TABLERO][TAMANIO_TABLERO], 
     return hundido;
 }
 
-// CORREGIDO: Recorre de forma exhaustiva el largo completo del barco y cambia cada una de sus coordenadas a HUNDIDO ('H')
 void modificar_tablero_propio_hundido(char tablero_propio[TAMANIO_TABLERO][TAMANIO_TABLERO], barco_t *barco)
 {
     for (int i = 0; i < barco->largo; i++)
@@ -446,6 +433,10 @@ void consecuencia_barco_tocado()
     printf("¡El enemigo ha tocado uno de tus barcos!\n");
 }
 
+/*
+PRE: el juego debe estar inicializado y el disparo debe ser una coordenada válida dentro del tablero.
+POS: actualiza el tablero propio del juego según el resultado del disparo enemigo. Si el disparo impacta en un barco, se marca como tocado ('T') y se verifica si el barco ha sido hundido. Si el barco es hundido, se actualiza el tablero para reflejarlo y se notifica al jugador. Si el disparo impacta en agua, se marca como agua ('A') y se notifica al jugador. En ambos casos, se actualizan las estadísticas de balas acertadas o erradas del enemigo.
+*/
 void verificar_disparo_enemigo(juego_t *juego, coordenada_t disparo)
 {
     if (juego->tablero_propio[disparo.fila][disparo.columna] == BARCO)
@@ -460,7 +451,6 @@ void verificar_disparo_enemigo(juego_t *juego, coordenada_t disparo)
             {
                 if (enemigo_hunde_barco(juego->tablero_propio, barco_actual))
                 {
-                    // MODIFICADO: Al confirmarse el hundimiento total, se pinta de forma integral el largo completo del barco con 'H'
                     modificar_tablero_propio_hundido(juego->tablero_propio, barco_actual);
                     consecuencia_barco_hundido(&(juego->barcos_aliados_sobrevivientes), &(juego->balas_enemigas_acertadas));
                 }
@@ -521,24 +511,6 @@ bool disparo_valido(int fila, int columna)
     return (fila >= 1 && fila <= TAMANIO_TABLERO && columna >= 1 && columna <= TAMANIO_TABLERO);
 }
 
-void reestablecer_disparo(int *fila, int *columna)
-{
-    *fila = 0;
-    *columna = 0;
-}
-
-bool obtener_disparo_usuario(int *fila, int *columna)
-{
-    printf("Ingrese su disparo (FILA;COLUMNA): ");
-    int leidos = scanf("%d;%d", fila, columna);
-    if (leidos != 2)
-    {
-        int c;
-        while ((c = getchar()) != '\n' && c != EOF); 
-        return false;
-    }
-    return true;
-}
 
 void consecuencia_resultado_disparo_jugador(char tablero_enemigo[TAMANIO_TABLERO][TAMANIO_TABLERO], int *balas_acertadas, int *balas_erradas, int *barcos_hundidos, char resultado, coordenada_t disparo)
 {
@@ -564,44 +536,44 @@ void consecuencia_resultado_disparo_jugador(char tablero_enemigo[TAMANIO_TABLERO
     }
 }
 
+void obtener_disparo_usuario(int *fila, int *columna)
+{
+    printf("Ingrese su disparo (FILA;COLUMNA): ");
+    scanf(" %d;%d", fila, columna); 
+}
+
+void obtener_disparo_valido(int *fila, int *columna)
+{
+    do
+    {
+        obtener_disparo_usuario(fila, columna);
+        if(!disparo_valido(*fila, *columna))
+        {
+            printf("Disparo inválido. Por favor, ingrese una fila y columna entre 1 y %d\n", TAMANIO_TABLERO);
+        }
+    } while (!disparo_valido(*fila, *columna));
+}
+
 void empezar_turnos_batalla(oponente_t *oponente, juego_t *juego)
 {
     int fila_ingresada = 0;
     int columna_ingresada = 0;
     printf("Empieza la batalla!\n");
     
-    while (juego->barcos_aliados_sobrevivientes > 0 && juego->barcos_enemigos_hundidos < CANTIDAD_BARCOS)
+    while (juego->barcos_aliados_sobrevivientes > INICIALIZACION_VALIDA && juego->barcos_enemigos_hundidos < CANTIDAD_BARCOS)
     {
         mostrar_interfaz(juego);
+
+        obtener_disparo_valido(&fila_ingresada, &columna_ingresada);
+
+        coordenada_t disparo_jugador;
+        disparo_jugador.fila = fila_ingresada - 1;
+        disparo_jugador.columna = columna_ingresada - 1;
+
+        char resultado_jugador = oponente_recibe_disparo(oponente, disparo_jugador);
+        consecuencia_resultado_disparo_jugador(juego->tablero_enemigo, &(juego->balas_aliadas_acertadas), &(juego->balas_aliadas_erradas), &(juego->barcos_enemigos_hundidos), resultado_jugador, disparo_jugador);
         
-        bool disparo_correcto = false;
-        while (!disparo_correcto)
-        {
-            reestablecer_disparo(&fila_ingresada, &columna_ingresada);
-            bool formato_ok = obtener_disparo_usuario(&fila_ingresada, &columna_ingresada);
-
-            if (formato_ok && disparo_valido(fila_ingresada, columna_ingresada)) 
-            {
-                disparo_correcto = true; 
-            }
-            else
-            {
-                printf("Coordenadas inválidas o formato incorrecto. Intente de nuevo.\n");
-            }
-        }
-
-        coordenada_t disp_jugador;
-        disp_jugador.fila = fila_ingresada - 1;
-        disp_jugador.columna = columna_ingresada - 1;
-
-        char resultado_jugador = oponente_recibe_disparo(oponente, disp_jugador);
-        consecuencia_resultado_disparo_jugador(juego->tablero_enemigo, &(juego->balas_aliadas_acertadas), &(juego->balas_aliadas_erradas), &(juego->barcos_enemigos_hundidos), resultado_jugador, disp_jugador);
-        
-        if (juego->barcos_enemigos_hundidos == CANTIDAD_BARCOS)
-        {
-            printf("¡Felicidades, GANASTE la batalla!\n");
-        }
-        else
+        if(juego->barcos_enemigos_hundidos < CANTIDAD_BARCOS)
         {
             coordenada_t disp_enemigo = oponente_realiza_disparo(oponente);
             printf("El oponente dispara: %d;%d\n", disp_enemigo.fila + 1, disp_enemigo.columna + 1);
@@ -636,7 +608,8 @@ void mostrar_mensaje_error(int estado_carga)
 
 int main(int argc, char *argv[])
 {
-    int estado_carga = verificar_cant_argumentos(argc);
+    int estado_carga = INICIALIZACION_INVALIDA;
+    estado_carga = verificar_cant_argumentos(argc);
     if (estado_carga != EXITO)
     {
         return estado_carga;
@@ -644,7 +617,13 @@ int main(int argc, char *argv[])
 
     juego_t juego;
     inicializar_juego(&juego);
-    estado_carga = cargar_barcos_propios(argv[ARGUMENTO_BARCOS], &juego);
+    FILE *barcos_jugador = fopen(argv[ARGUMENTO_BARCOS], LECTURA);
+    if (!barcos_jugador)
+    {
+        printf("¡Error de abrir el archivo de barcos!\n");
+        return ERROR_ABRIR_ARCHIVO;
+    }
+    estado_carga = cargar_barcos_propios(barcos_jugador, &juego);
 
     if (estado_carga != EXITO)
     {
