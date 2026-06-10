@@ -10,6 +10,7 @@
 #define COLOR_RESET "\x1b[0m"    // RESET
 #define TEXTO_BOLD "\x1b[1m"     // Negrita
 #define COLOR_AGUA "\x1b[34m"    // Azul
+#define COLOR_BARCO "\x1b[35m"    // Magenta
 
 #define TAMANIO_TABLERO 10
 #define CANTIDAD_BARCOS 5
@@ -120,7 +121,6 @@ POS: Muestra el estado actual del juego, con el tablero propio y el tablero enem
 */
 void mostrar_juego(juego_t *juego)
 {
-
     printf("\n"
            "    ┌───────────────────────────────┐          ┌───────────────────────────────┐\n"
            "    │     TU TABLERO (DEFENSA)      │          │   TABLERO ENEMIGO (ATAQUE)    │\n"
@@ -131,40 +131,61 @@ void mostrar_juego(juego_t *juego)
     for (int i = INICIALIZACION_VALIDA; i < TAMANIO_TABLERO; i++)
     {
         int i_aux = i + 1;
-        if (i_aux < 10)
-        {
+        
+        // --- TABLERO PROPIO (Fila i) ---
+        if (i_aux < 10) {
             printf(" %d  │ ", i_aux);
-        }
-        else
-        {
+        } else {
             printf("%d  │ ", i_aux);
         }
 
         for (int j = INICIALIZACION_VALIDA; j < TAMANIO_TABLERO; j++)
         {
-            printf("%c  ", juego->tablero_propio[i][j]);
+            char celda = juego->tablero_propio[i][j];
+            if (celda == AGUA){
+                printf(COLOR_AGUA "%c  " COLOR_RESET, celda);
+            }      
+            else if (celda == TOCADO){
+                printf(COLOR_TOCADO "%c  " COLOR_RESET, celda);
+            }
+            else if (celda == HUNDIDO){
+                printf(COLOR_HUNDIDO "%c  " COLOR_RESET, celda);
+            }
+            else{
+                printf("%c  ", celda);
+            }            
         }
-        printf("│      ");
+        printf("│      "); // Cierra tablero propio y deja espacio en el medio
 
-        if (i_aux < 10)
-        {
+        // --- TABLERO ENEMIGO (Fila i) ---
+        if (i_aux < 10) {
             printf(" %d  │ ", i_aux);
-        }
-        else
-        {
+        } else {
             printf("%d  │ ", i_aux);
         }
 
         for (int j = INICIALIZACION_VALIDA; j < TAMANIO_TABLERO; j++)
         {
             char celda = juego->tablero_enemigo[i][j];
-            printf("%c  ", celda);
+            if (celda == AGUA){
+                printf(COLOR_AGUA "%c  " COLOR_RESET, celda);
+            }      
+            else if (celda == TOCADO){
+                printf(COLOR_TOCADO "%c  " COLOR_RESET, celda);
+            }
+            else if (celda == HUNDIDO){
+                printf(COLOR_HUNDIDO "%c  " COLOR_RESET, celda);
+            }
+            else{
+                printf("%c  ", celda);
+            }                       
         }
-        printf("│\n");
+        printf("│\n"); 
     }
-
+    
     printf("    └───────────────────────────────┘          └───────────────────────────────┘\n\n");
 }
+
 /*
 PRE: juego debe haber sido inicializado previamente y haber leído la cantidad de barcos permitida.
 POS: Valida que la composición de barcos leída corresponda a la composición reglamentaria, es decir, que haya 1 barco de largo 2, 2 barcos de largo 3, 1 barco de largo 4 y 1 barco de largo 5.
@@ -259,6 +280,7 @@ int validar_datos_barco(int fila, int columna, char direccion, int largo, int ca
 
     return EXITO;
 }
+
 /*
 PRE: debe entrar una dirección y dos punteros a enteros de fila y columna.
 POS: Carga en los punteros de fila y columna la el tipo de dirección del barco correspondiente a la dirección ingresada.
@@ -348,7 +370,7 @@ void inicializar_tablero_ocupacion(bool matriz_ocupacion[TAMANIO_TABLERO][TAMANI
 }
 /*
 PRE: debe entrar el archivo de barcos del jugador YA ABIERTOy el juego inicializado.
-POS: Lee los datos de los barcos del jugador desde el archivo, valida que sean correctos, carga los barcos en el juego 
+POS: Lee los datos de los barcos del jugador desde el archivo, valida que sean correctos, carga los barcos en el juego
     y marca las posiciones de los barcos en el tablero propio.
     Devuelve EXITO si se cargaron correctamente todos los barcos, ERROR_LECTURA si hubo un error en la lectura o validación de los datos de los barcos
     o si la composición final de la flota no es la reglamentaria o faltan barcos.
@@ -572,7 +594,7 @@ POS: Modifica el tablero enemigo del juego, marcando con el símbolo correspondi
 */
 void consecuencia_resultado_disparo_jugador(char tablero_enemigo[TAMANIO_TABLERO][TAMANIO_TABLERO], int *balas_acertadas, int *balas_erradas, int *barcos_hundidos, char resultado, coordenada_t disparo)
 {
-    printf(TEXTO_BOLD " ├─ TELEMETRÍA DE "COLOR_GANADOR"TU ATAQUE "COLOR_RESET TEXTO_BOLD"──> Coordenada: [" COLOR_GANADOR "%d;%d" COLOR_RESET TEXTO_BOLD "]\n" COLOR_RESET, disparo.fila + 1, disparo.columna + 1);
+    printf(TEXTO_BOLD " ├─ TELEMETRÍA DE " COLOR_GANADOR "TU ATAQUE " COLOR_RESET TEXTO_BOLD "──> Coordenada: [" COLOR_GANADOR "%d;%d" COLOR_RESET TEXTO_BOLD "]\n" COLOR_RESET, disparo.fila + 1, disparo.columna + 1);
     printf(" │  Resultado: ");
     if (resultado == AGUA)
     {
@@ -600,6 +622,7 @@ POS: Solicita al usuario que ingrese un disparo en el formato FILA;COLUMNA, y ca
 */
 void obtener_disparo_usuario(int *fila, int *columna)
 {
+    printf(TEXTO_BOLD "Simbolos: " COLOR_HUNDIDO "H" COLOR_RESET  " para hundido, " COLOR_TOCADO "T" COLOR_RESET  " para tocado, " COLOR_AGUA "A" COLOR_RESET " para agua, " COLOR_BARCO "B" COLOR_RESET " para barco\n");
     printf("Ingrese su disparo (FILA;COLUMNA): ");
     scanf(" %d;%d", fila, columna);
 }
