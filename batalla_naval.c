@@ -132,7 +132,6 @@ void mostrar_juego(juego_t *juego)
     {
         int i_aux = i + 1;
         
-        // --- TABLERO PROPIO (Fila i) ---
         if (i_aux < 10) {
             printf(" %d  │ ", i_aux);
         } else {
@@ -155,9 +154,7 @@ void mostrar_juego(juego_t *juego)
                 printf("%c  ", celda);
             }            
         }
-        printf("│      "); // Cierra tablero propio y deja espacio en el medio
-
-        // --- TABLERO ENEMIGO (Fila i) ---
+        printf("│      ");
         if (i_aux < 10) {
             printf(" %d  │ ", i_aux);
         } else {
