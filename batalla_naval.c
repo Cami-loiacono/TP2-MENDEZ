@@ -241,7 +241,7 @@ int validar_datos_barco(int fila, int columna, char direccion, int largo, int ca
         printf("¡Error de lectura! Se han leído más barcos de los permitidos.\n");
         return ERROR_LECTURA;
     }
-    if (fila < COORDENADA_MINIMA || fila > TAMANIO_TABLERO || columna < COORDENADA_MINIMA || columna > TAMANIO_TABLERO)
+    if ((fila < COORDENADA_MINIMA) || (fila > TAMANIO_TABLERO) || (columna < COORDENADA_MINIMA) || (columna > TAMANIO_TABLERO))
     {
         printf("¡Error de lectura! Posición inicial fuera del mapa: %d;%d\n", fila, columna);
         return ERROR_LECTURA;
@@ -298,7 +298,7 @@ bool validar_y_cargar_posiciones_barco(int fila_matriz, int columna_matriz, int 
         fila_actual = fila_matriz + (posicion_fila * i);
         columna_actual = columna_matriz + (posicion_columna * i);
 
-        if (fila_actual < INICIALIZACION_VALIDA || fila_actual >= TAMANIO_TABLERO || columna_actual < INICIALIZACION_VALIDA || columna_actual >= TAMANIO_TABLERO || matriz_ocupacion[fila_actual][columna_actual])
+        if ((fila_actual < INICIALIZACION_VALIDA) || (fila_actual > TAMANIO_TABLERO) || (columna_actual < INICIALIZACION_VALIDA) || (columna_actual > TAMANIO_TABLERO) || (matriz_ocupacion[fila_actual][columna_actual]))
         {
             posicion_valida = false;
         }
@@ -538,6 +538,7 @@ void escribir_reporte(FILE *reporte_archivo, juego_t *juego)
     fprintf(reporte_archivo, "Balas enemigas erradas: %d\n", juego->balas_enemigas_erradas);
     fprintf(reporte_archivo, "Barcos enemigos hundidos: %d\n", juego->barcos_enemigos_hundidos);
     fprintf(reporte_archivo, "Barcos aliados sobrevivientes: %d\n", juego->barcos_aliados_sobrevivientes);
+    printf("Reporte escrito correctamente.\n");
 }
 /*
 PRE: debe entrar la cantidad de argumentos ingresados al ejecutar el programa.
@@ -548,7 +549,6 @@ int verificar_cant_argumentos(int argc)
 {
     if (argc != ARGUMENTOS_REQUERIDOS)
     {
-        printf("Error de cantidad de argumentos. Se DEBE ingresar: <programa_ejecutable> <archivo_barcos> <archivo_reporte>\n");
         return ERROR_CANTIDAD_ARGUMENTOS;
     }
     return EXITO;
@@ -703,9 +703,17 @@ void mostrar_mensaje_error(int estado_carga)
     {
         printf("Error de abrir el archivo.\n");
     }
-    else
+    else if (estado_carga == ERROR_LECTURA)
     {
-        printf("Error de lectura.\n");
+        printf("Error de lectura de los datos del archivo.\n");
+    }
+    else if (estado_carga == ERROR_ESCRITURA)
+    {
+        printf("Error de escritura del archivo de reporte.\n");
+    }
+    else if (estado_carga == ERROR_CANTIDAD_ARGUMENTOS)
+    {
+        printf("Error de cantidad de argumentos. Se DEBE ingresar: <programa_ejecutable> <archivo_barcos> <archivo_reporte>\n");
     }
 }
 
@@ -715,6 +723,7 @@ int main(int argc, char *argv[])
     estado_carga = verificar_cant_argumentos(argc);
     if (estado_carga != EXITO)
     {
+        mostrar_mensaje_error(estado_carga);
         return estado_carga;
     }
 
@@ -723,7 +732,7 @@ int main(int argc, char *argv[])
     FILE *barcos_jugador = fopen(argv[ARGUMENTO_BARCOS], LECTURA);
     if (!barcos_jugador)
     {
-        printf("¡Error de abrir el archivo de barcos!\n");
+        mostrar_mensaje_error(ERROR_ABRIR_ARCHIVO);
         return ERROR_ABRIR_ARCHIVO;
     }
     estado_carga = cargar_barcos_propios(barcos_jugador, &juego);
@@ -744,16 +753,16 @@ int main(int argc, char *argv[])
     mostrar_juego(&juego);
     empezar_turnos_batalla(oponente, &juego);
     mostrar_mensaje_final(juego);
+    oponente_destruir(oponente);
+    liberar_barcos_memoria(&juego);
     FILE *reporte_archivo = fopen(argv[ARGUMENTO_REPORTE], ESCRITURA);
     if (!reporte_archivo)
     {
+        mostrar_mensaje_error(ERROR_LECTURA);
         return ERROR_ESCRITURA;
     }
 
     escribir_reporte(reporte_archivo, &juego);
-    oponente_destruir(oponente);
-    liberar_barcos_memoria(&juego);
-    printf("Reporte escrito correctamente.\n");
     fclose(reporte_archivo);
 
     return EXITO;
